@@ -3,7 +3,17 @@
     <header-navbar :isHeaderInfo="isHeaderInfo"/>
     <div class="multi-input-background"></div>
     <multi-input :dataSet="dataSet" :isHeaderInfo="isHeaderInfo"/>
-    <room-list :roomList="roomList" @goDetail="goDetail"/>
+    <room-list :roomList="defaultPage" @goDetail="goDetail"/>
+    <!-- 分页 -->
+    <el-pagination
+      background
+      @current-change="handleChangePage"
+      :page-size="paginations.page_size"
+      :current-page.sync="paginations.page_index"
+      :layout="paginations.layout"
+      :total="paginations.total">
+    </el-pagination>
+
     <my-footer/>
   </div>
 </template>
@@ -19,6 +29,18 @@
     data() {
       return {
         isHeaderInfo: true,
+        // 分页属性配置
+        paginations: {
+          page_index: 1,
+          page_size: 5,
+          layout: "prev,pager,next",
+          total: 0 // 暂时的数据
+        },
+        // 每页显示的内容
+        defaultPage: [],
+        // 总数据
+        allData: [],
+        // 嵌套搜索的属性配置
         dataSet: {
           address: '', // 目的地
           timeValue: '', // 日期时间选择器
@@ -41,6 +63,7 @@
             }], //  选择器
           checkedOption: '',
         },
+        // mock 数据
         roomList: [
           {
             id: '01',
@@ -117,10 +140,40 @@
         ]
       }
     },
-    methods:{
-      goDetail (id) {
-        this.$router.push('/detail/'+id)
+    methods: {
+      // 跳转
+      goDetail(id) {
+        this.$router.push('/detail/' + id)
+      },
+      // 点击页码时跳转到对应的页数
+      handleChangePage(page) {
+        //  获取当前页
+        let index = this.paginations.page_size * (page - 1)
+        //  数据的总数 （相当于total）
+        let nums = this.paginations.page_size * page
+        //  当前页面数据容器
+        let datas = []
+        for (let i = index; i < nums; i++) {
+          if (this.allData[i]) {
+            datas.push(this.allData[i])
+          }
+          this.defaultPage = datas
+        }
+        console.log(page);
+      },
+      // 放到 axios 回调中的操作
+      getData() {
+        this.allData = this.roomList
+        this.paginations.total = this.allData.length
+        this.defaultPage = this.allData.filter((item, index) => {
+          return index < this.paginations.page_size
+        })
       }
+    },
+    mounted() {
+      // 因为没有使用axios 获取数据，所以这里简单赋值，
+      // 实际情况将axios 拿到的数据赋值给allData 进行分页即可
+      this.getData()
     },
     components: {
       HeaderNavbar,
@@ -136,5 +189,10 @@
     width: 100%;
     height: 180px;
     background-color: #f5f5f5;
+  }
+
+  .el-pagination {
+    text-align: center;
+    margin: 30px 0;
   }
 </style>
